@@ -50,47 +50,25 @@ class _TaskListScreenState extends State<TaskListScreen> {
     });
   }
 
-Future<void> _addTask() async {
-  // Log 1: Confirma que o botão foi pressionado
-  print("--- _addTask: INICIADO ---");
-
-  if (_titleController.text.trim().isEmpty) {
-    print("--- _addTask: CANCELADO (título vazio) ---");
-    return;
-  }
-
-  try {
-    final task = Task(
-      title: _titleController.text.trim(),
-      priority: _selectedPriority,
-    );
-    // Log 2: Confirma que o objeto Task foi criado
-    print("--- _addTask: 1. Objeto Task criado: ${task.title}");
-
-    await DatabaseService.instance.create(task);
-    // Log 3: Confirma que a tarefa foi salva no banco
-    print("--- _addTask: 2. Tarefa salva no banco de dados.");
-
-    _titleController.clear();
-
-    await _refreshTasks(); 
-    // Log 4: Confirma que a tela foi atualizada
-    print("--- _addTask: 3. Tela de tarefas recarregada.");
-
-  } catch (e) {
-    // Log 5: Captura e exibe qualquer erro que tenha ocorrido no processo
-    print("!!!!!! _addTask: ERRO CAPTURADO !!!!!!");
-    print("Detalhes do erro: $e");
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Ocorreu um erro ao salvar: $e"),
-          backgroundColor: Colors.red,
-        ),
+  Future<void> _addTask() async {
+    if (_titleController.text.trim().isEmpty) return;
+    
+    try {
+      final task = Task(
+        title: _titleController.text.trim(),
+        priority: _selectedPriority,
       );
+      await DatabaseService.instance.create(task);
+      _titleController.clear();
+      await _refreshTasks();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Erro ao salvar a tarefa: $e"), backgroundColor: Colors.red),
+        );
+      }
     }
   }
-}
 
   Future<void> _toggleTask(Task task) async {
     final updatedTask = task.copyWith(completed: !task.completed);
