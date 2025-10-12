@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import '../models/task.dart';
 import '../services/database_service.dart';
@@ -25,16 +26,18 @@ class _TaskListScreenState extends State<TaskListScreen> {
   }
 
   Future<void> _refreshTasks() async {
+    developer.log('UI: Iniciando _refreshTasks...', name: 'TaskListScreen');
     final tasksFromDb = await DatabaseService.instance.readAll();
+    developer.log('UI: _refreshTasks recebeu ${tasksFromDb.length} tarefas do DB.', name: 'TaskListScreen');
     if (mounted) {
       setState(() {
+        developer.log('UI: setState em _refreshTasks está executando.', name: 'TaskListScreen');
         _allTasks = tasksFromDb;
-        _applyFilter(); // A mágica acontece aqui, dentro de um único setState.
+        _applyFilter();
       });
     }
   }
 
-  // Este método agora APENAS filtra a lista, sem chamar setState.
   void _applyFilter() {
     switch (_currentFilter) {
       case TaskFilter.pending:
@@ -50,17 +53,23 @@ class _TaskListScreenState extends State<TaskListScreen> {
   }
 
   Future<void> _addTask() async {
-    if (_titleController.text.trim().isEmpty) return;
+    developer.log('UI: _addTask chamado.', name: 'TaskListScreen');
+    if (_titleController.text.trim().isEmpty) {
+      developer.log('UI: _addTask abortado, título vazio.', name: 'TaskListScreen');
+      return;
+    }
     
     try {
       final task = Task(
         title: _titleController.text.trim(),
         priority: _selectedPriority,
       );
+      developer.log('UI: Criando objeto da tarefa: ${task.toMap()}', name: 'TaskListScreen');
       await DatabaseService.instance.create(task);
       _titleController.clear();
-      await _refreshTasks(); // Isto irá recarregar e redesenhar a lista.
-    } catch (e) {
+      await _refreshTasks();
+    } catch (e, s) {
+      developer.log('UI: ERRO em _addTask: $e', name: 'TaskListScreen', error: e, stackTrace: s);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Erro ao salvar a tarefa: $e"), backgroundColor: Colors.red),
@@ -82,6 +91,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
   
   @override
   Widget build(BuildContext context) {
+    developer.log('UI: Método build chamado. Tarefas filtradas: ${_filteredTasks.length}', name: 'TaskListScreen');
     return Scaffold(
       appBar: AppBar(
         title: Text('Minhas Tarefas (${_filteredTasks.length})'),
@@ -146,7 +156,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
                   onSelected: (selected) {
                     setState(() {
                       _currentFilter = filter;
-                      _applyFilter(); // Correto: chama o filtro dentro do setState.
+                      _applyFilter();
                     });
                   },
                 );

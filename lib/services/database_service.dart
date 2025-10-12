@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import '../models/task.dart';
@@ -40,14 +41,18 @@ class DatabaseService {
 
   Future<Task> create(Task task) async {
     final db = await database;
+    developer.log('DATABASE: Tentando criar a tarefa: ${task.toMap()}', name: 'DatabaseService');
     await db.insert('tasks', task.toMap());
+    developer.log('DATABASE: Tarefa criada com sucesso.', name: 'DatabaseService');
     return task;
   }
 
   Future<List<Task>> readAll() async {
     final db = await database;
+    developer.log('DATABASE: Lendo todas as tarefas...', name: 'DatabaseService');
     const orderBy = 'createdAt DESC';
     final result = await db.query('tasks', orderBy: orderBy);
+    developer.log('DATABASE: Encontradas ${result.length} tarefas. Dados: $result', name: 'DatabaseService');
     return result.map((map) => Task.fromMap(map)).toList();
   }
 
