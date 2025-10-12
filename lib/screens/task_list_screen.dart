@@ -29,25 +29,24 @@ class _TaskListScreenState extends State<TaskListScreen> {
     if (mounted) {
       setState(() {
         _allTasks = tasksFromDb;
-        _applyFilter();
+        _applyFilter(); // A mágica acontece aqui, dentro de um único setState.
       });
     }
   }
 
+  // Este método agora APENAS filtra a lista, sem chamar setState.
   void _applyFilter() {
-    setState(() {
-      switch (_currentFilter) {
-        case TaskFilter.pending:
-          _filteredTasks = _allTasks.where((task) => !task.completed).toList();
-          break;
-        case TaskFilter.completed:
-          _filteredTasks = _allTasks.where((task) => task.completed).toList();
-          break;
-        default:
-          _filteredTasks = List.from(_allTasks);
-          break;
-      }
-    });
+    switch (_currentFilter) {
+      case TaskFilter.pending:
+        _filteredTasks = _allTasks.where((task) => !task.completed).toList();
+        break;
+      case TaskFilter.completed:
+        _filteredTasks = _allTasks.where((task) => task.completed).toList();
+        break;
+      default:
+        _filteredTasks = List.from(_allTasks);
+        break;
+    }
   }
 
   Future<void> _addTask() async {
@@ -60,7 +59,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
       );
       await DatabaseService.instance.create(task);
       _titleController.clear();
-      await _refreshTasks();
+      await _refreshTasks(); // Isto irá recarregar e redesenhar a lista.
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -147,7 +146,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
                   onSelected: (selected) {
                     setState(() {
                       _currentFilter = filter;
-                      _applyFilter();
+                      _applyFilter(); // Correto: chama o filtro dentro do setState.
                     });
                   },
                 );
