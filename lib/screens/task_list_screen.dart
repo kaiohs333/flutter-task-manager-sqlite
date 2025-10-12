@@ -51,16 +51,40 @@ class _TaskListScreenState extends State<TaskListScreen> {
     });
   }
 
+  // --- FUNÇÃO _addTask ATUALIZADA COM TRATAMENTO DE ERROS ---
   Future<void> _addTask() async {
-    if (_titleController.text.trim().isEmpty) return;
+    if (_titleController.text.trim().isEmpty) {
+      print("Tentativa de adicionar tarefa com título vazio.");
+      return;
+    }
 
-    final task = Task(
-      title: _titleController.text.trim(),
-      priority: _selectedPriority, // Usa a prioridade selecionada
-    );
-    await DatabaseService.instance.create(task);
-    _titleController.clear();
-    _loadTasks(); // Recarrega e aplica o filtro
+    print("Iniciando _addTask...");
+    try {
+      final task = Task(
+        title: _titleController.text.trim(),
+        priority: _selectedPriority,
+      );
+      print("Tarefa criada no objeto: ${task.title}, Prioridade: ${task.priority}");
+
+      await DatabaseService.instance.create(task);
+      print("Tarefa salva no banco de dados com sucesso.");
+      
+      _titleController.clear();
+      // O await aqui garante que a UI só será atualizada após o recarregamento
+      await _loadTasks(); 
+      print("Lista de tarefas recarregada.");
+
+    } catch (e) {
+      print("!!!!!! ERRO AO ADICIONAR TAREFA: $e");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Erro ao salvar a tarefa: $e"),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _toggleTask(Task task) async {
