@@ -1,4 +1,5 @@
 import 'dart:developer' as developer;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import '../models/task.dart';
@@ -16,6 +17,16 @@ class DatabaseService {
   }
 
   Future<Database> _initDB(String filePath) async {
+    // Para a web, o nome do banco de dados é suficiente, não precisamos de um caminho.
+    if (kIsWeb) {
+      return await openDatabase(
+        filePath,
+        version: 1,
+        onCreate: _createDB,
+      );
+    }
+
+    // O código abaixo é para mobile (Android/iOS).
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, filePath);
 
