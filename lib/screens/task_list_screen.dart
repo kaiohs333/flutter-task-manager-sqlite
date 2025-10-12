@@ -2,19 +2,17 @@ import 'package:flutter/material.dart';
 import '../models/task.dart';
 import '../services/database_service.dart';
 
-// Enum para controlar o estado do filtro
 enum TaskFilter { all, pending, completed }
 
 class TaskListScreen extends StatefulWidget {
   const TaskListScreen({Key? key}) : super(key: key);
-
   @override
   State<TaskListScreen> createState() => _TaskListScreenState();
 }
 
 class _TaskListScreenState extends State<TaskListScreen> {
-  List<Task> _allTasks = []; // Armazena todas as tarefas do banco
-  List<Task> _filteredTasks = []; // Armazena as tarefas a serem exibidas na tela
+  List<Task> _allTasks = [];
+  List<Task> _filteredTasks = [];
   
   final _titleController = TextEditingController();
   String _selectedPriority = 'medium';
@@ -26,19 +24,16 @@ class _TaskListScreenState extends State<TaskListScreen> {
     _refreshTasks();
   }
 
-  // Função principal para buscar do banco e atualizar a UI
   Future<void> _refreshTasks() async {
-    // 1. Busca todas as tarefas do banco de dados
     final tasksFromDb = await DatabaseService.instance.readAll();
-    
-    // 2. Define o estado com a lista completa E a lista filtrada
-    setState(() {
-      _allTasks = tasksFromDb;
-      _applyFilter();
-    });
+    if (mounted) {
+      setState(() {
+        _allTasks = tasksFromDb;
+        _applyFilter();
+      });
+    }
   }
 
-  // Apenas aplica o filtro na lista que já está em memória
   void _applyFilter() {
     setState(() {
       switch (_currentFilter) {
@@ -48,7 +43,6 @@ class _TaskListScreenState extends State<TaskListScreen> {
         case TaskFilter.completed:
           _filteredTasks = _allTasks.where((task) => task.completed).toList();
           break;
-        case TaskFilter.all:
         default:
           _filteredTasks = List.from(_allTasks);
           break;
@@ -56,28 +50,59 @@ class _TaskListScreenState extends State<TaskListScreen> {
     });
   }
 
-  Future<void> _addTask() async {
-    if (_titleController.text.trim().isEmpty) return;
+Future<void> _addTask() async {
+  // Log 1: Confirma que o botão foi pressionado
+  print("--- _addTask: INICIADO ---");
+
+  if (_titleController.text.trim().isEmpty) {
+    print("--- _addTask: CANCELADO (título vazio) ---");
+    return;
+  }
+
+  try {
     final task = Task(
       title: _titleController.text.trim(),
       priority: _selectedPriority,
     );
+    // Log 2: Confirma que o objeto Task foi criado
+    print("--- _addTask: 1. Objeto Task criado: ${task.title}");
+
     await DatabaseService.instance.create(task);
+    // Log 3: Confirma que a tarefa foi salva no banco
+    print("--- _addTask: 2. Tarefa salva no banco de dados.");
+
     _titleController.clear();
-    await _refreshTasks(); // Recarrega tudo do banco
+
+    await _refreshTasks(); 
+    // Log 4: Confirma que a tela foi atualizada
+    print("--- _addTask: 3. Tela de tarefas recarregada.");
+
+  } catch (e) {
+    // Log 5: Captura e exibe qualquer erro que tenha ocorrido no processo
+    print("!!!!!! _addTask: ERRO CAPTURADO !!!!!!");
+    print("Detalhes do erro: $e");
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Ocorreu um erro ao salvar: $e"),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
+}
 
   Future<void> _toggleTask(Task task) async {
     final updatedTask = task.copyWith(completed: !task.completed);
     await DatabaseService.instance.update(updatedTask);
-    await _refreshTasks(); // Recarrega tudo do banco
+    await _refreshTasks();
   }
 
   Future<void> _deleteTask(String id) async {
     await DatabaseService.instance.delete(id);
-    await _refreshTasks(); // Recarrega tudo do banco
+    await _refreshTasks();
   }
-
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -86,7 +111,6 @@ class _TaskListScreenState extends State<TaskListScreen> {
       ),
       body: Column(
         children: [
-          // Área de Adicionar Tarefa
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -120,7 +144,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
                   items: Task.priorities.map((String priority) {
                     return DropdownMenuItem<String>(
                       value: priority,
-                      child: Text(priority[0].toUpperCase() + priority.substring(1)), // Deixa a primeira letra maiúscula
+                      child: Text(priority[0].toUpperCase() + priority.substring(1)),
                     );
                   }).toList(),
                   onChanged: (newValue) {
@@ -134,14 +158,13 @@ class _TaskListScreenState extends State<TaskListScreen> {
               ],
             ),
           ),
-          // Filtros
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: Wrap(
               spacing: 8.0,
               children: TaskFilter.values.map((filter) {
                 return FilterChip(
-                  label: Text(filter.name[0].toUpperCase() + filter.name.substring(1)), // ex: "All" -> "All"
+                  label: Text(filter.name[0].toUpperCase() + filter.name.substring(1)),
                   selected: _currentFilter == filter,
                   onSelected: (selected) {
                     setState(() {
@@ -153,7 +176,6 @@ class _TaskListScreenState extends State<TaskListScreen> {
               }).toList(),
             ),
           ),
-          // Lista de Tarefas
           Expanded(
             child: ListView.builder(
               itemCount: _filteredTasks.length,

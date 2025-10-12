@@ -44,20 +44,6 @@ class DatabaseService {
     return task;
   }
 
-  Future<Task?> read(String id) async {
-    final db = await database;
-    final maps = await db.query(
-      'tasks',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
-
-    if (maps.isNotEmpty) {
-      return Task.fromMap(maps.first);
-    }
-    return null;
-  }
-
   Future<List<Task>> readAll() async {
     final db = await database;
     const orderBy = 'createdAt DESC';
