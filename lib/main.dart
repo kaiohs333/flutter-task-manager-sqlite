@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
-import 'dart:io' show Platform;
+// Importa a constante 'kIsWeb' para verificar se estamos na web
+import 'package:flutter/foundation.dart' show kIsWeb; 
 import 'screens/task_list_screen.dart';
 
 Future<void> main() async {
@@ -8,14 +9,12 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // --- SOLUÇÃO PARA O ERRO ---
-  // Se a plataforma for Desktop (Windows, macOS, Linux) ou Web,
-  // precisamos inicializar o adaptador FFI do sqflite.
-  if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+  // Verifica se NÃO estamos na web para inicializar o FFI.
+  // A versão web do sqflite (sqflite_common_ffi_web) se inicializa sozinha.
+  if (!kIsWeb) {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
   }
-  // Para a web, o ffi_web já cuida disso automaticamente se a dependência
-  // sqflite_common_ffi_web estiver no projeto. Vamos adicioná-la por garantia.
 
   runApp(const MyApp());
 }
