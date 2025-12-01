@@ -268,7 +268,7 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
 
                     // PRIORIDADE
                     DropdownButtonFormField<String>(
-                      value: _priority,
+                      initialValue: _priority,
                       decoration: const InputDecoration(
                         labelText: 'Prioridade',
                         prefixIcon: Icon(Icons.flag),
@@ -292,7 +292,7 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                       subtitle: Text(_completed ? 'Sim' : 'Não'),
                       value: _completed,
                       onChanged: (value) => setState(() => _completed = value),
-                      activeColor: Colors.green,
+                      activeThumbColor: Colors.green,
                       secondary: Icon(
                         _completed ? Icons.check_circle : Icons.radio_button_unchecked,
                         color: _completed ? Colors.green : Colors.grey,

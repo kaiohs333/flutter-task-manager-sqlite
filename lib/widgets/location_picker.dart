@@ -222,11 +222,11 @@ class _LocationPickerState extends State<LocationPicker> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
+                    const Row(
                       children: [
-                        const Icon(Icons.check_circle, color: Colors.green),
-                        const SizedBox(width: 8),
-                        const Text(
+                        Icon(Icons.check_circle, color: Colors.green),
+                        SizedBox(width: 8),
+                        Text(
                           'Localização selecionada',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,

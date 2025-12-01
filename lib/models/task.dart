@@ -1,4 +1,3 @@
-import 'package:uuid/uuid.dart';
 
 class Task {
   static const priorities = ['low', 'medium', 'high', 'urgent'];

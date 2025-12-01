@@ -57,8 +57,8 @@ class _TaskListScreenState extends State<TaskListScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Row(
-          children: const [
+        title: const Row(
+          children: [
             Icon(Icons.vibration, color: Colors.blue),
             SizedBox(width: 8),
             Expanded(child: Text('Shake detectado!')),
@@ -371,10 +371,10 @@ Future<void> _toggleComplete(Task task) async {
                 context: context,
                 builder: (context) => AlertDialog(
                   title: const Text('💡 Dicas'),
-                  content: Column(
+                  content: const Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
+                    children: [
                       Text('• Toque no card para editar'),
                       SizedBox(height: 8),
                       Text('• Marque como completa com checkbox'),
