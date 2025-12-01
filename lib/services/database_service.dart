@@ -137,7 +137,7 @@ class DatabaseService {
     );
   }
 
-  Future<int> delete(int id) async { // MUDANÇA: de String id para int id
+  Future<int> delete(String id) async { // MUDANÇA: de int id para String id
     final db = await instance.database;
     return await db.delete(
       'tasks',
@@ -146,24 +146,33 @@ class DatabaseService {
     );
   }
 
-  // Método especial: buscar tarefas por proximidade (ainda não usado)
-  Future<List<Task>> getTasksNearLocation({
-    required double latitude,
-    required double longitude,
-    double radiusInMeters = 1000,
-  }) async {
-    final allTasks = await readAll();
+  // --- MÉTODOS DA FILA DE SINCRONIZAÇÃO ---
 
-    return allTasks.where((task) {
-      if (!task.hasLocation) return false;
+  Future<void> addToSyncQueue(String taskId, String action, {String? payload}) async {
+    final db = await instance.database;
+    await db.insert('sync_queue', {
+      'taskId': taskId,
+      'action': action,
+      'payload': payload,
+      'timestamp': DateTime.now().toIso8601String(),
+    });
+    print('Adicionado à fila de sincronização: $action para taskId $taskId');
+  }
 
-      // Cálculo de distância (simplificado)
-      final latDiff = (task.latitude! - latitude).abs();
-      final lonDiff = (task.longitude! - longitude).abs();
-      final distance = ((latDiff * 111000) + (lonDiff * 111000)) / 2;
+  Future<List<Map<String, dynamic>>> readSyncQueue() async {
+    final db = await instance.database;
+    final result = await db.query('sync_queue', orderBy: 'timestamp ASC');
+    return result;
+  }
 
-      return distance <= radiusInMeters;
-    }).toList();
+  Future<void> removeFromSyncQueue(int id) async {
+    final db = await instance.database;
+    await db.delete(
+      'sync_queue',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+    print('Removido da fila de sincronização: id $id');
   }
 
   Future close() async {

@@ -1,29 +1,32 @@
-// lib/main.dart
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart'; // Importar provider
+import 'package:provider/provider.dart';
 import 'screens/task_list_screen.dart';
 import 'services/camera_service.dart';
-import 'services/connectivity_service.dart'; // Importar ConnectivityService
+import 'services/connectivity_service.dart';
+import 'services/sync_service.dart'; // Importar SyncService
 import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
-void main() async { // 2. Transformar main em async
-  // 3. Garantir que o Flutter esteja pronto
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 4. Inicializar o banco de dados para a plataforma correta
   if (kIsWeb) {
     databaseFactory = databaseFactoryFfiWeb;
   }
   
-  // 5. Inicializar o serviço de câmera
   await CameraService.instance.initialize();
 
-  // 6. Rodar o App
+  // Inicializar SyncService
+  final syncService = SyncService();
+  syncService.initialize();
+
   runApp(
-    ChangeNotifierProvider( // Prover ConnectivityService
-      create: (context) => ConnectivityService(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => ConnectivityService()),
+        ChangeNotifierProvider(create: (context) => syncService), // Prover SyncService
+      ],
       child: const MyApp(),
     ),
   );

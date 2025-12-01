@@ -169,6 +169,14 @@ class TaskCard extends StatelessWidget {
                                 'Shake',
                                 Colors.green,
                               ),
+                            
+                            // Badge: Não Sincronizada
+                            if (!task.isSynced)
+                              _buildBadge(
+                                Icons.cloud_off,
+                                'Pendente',
+                                Colors.grey,
+                              ),
                           ],
                         ),
                       ],
