@@ -21,15 +21,14 @@ class DatabaseService {
 
     return await openDatabase(
       path,
-      version: 4,  // AUMENTAMOS A VERSÃO PARA 4
+      version: 5,  // AUMENTAMOS A VERSÃO PARA 5
       onCreate: _createDB,
       onUpgrade: _onUpgrade, // NOVO: Especifica a função de migração
     );
   }
 
   Future<void> _createDB(Database db, int version) async {
-    // ID agora é INTEGER e AUTOINCREMENT
-    const idType = 'INTEGER PRIMARY KEY AUTOINCREMENT';
+    const idType = 'TEXT PRIMARY KEY'; // ID agora é TEXT para UUID
     const textType = 'TEXT NOT NULL';
     const intType = 'INTEGER NOT NULL';
 
@@ -41,14 +40,24 @@ class DatabaseService {
         priority $textType,
         completed $intType,
         createdAt $textType,
-        
-        -- NOVOS CAMPOS ADICIONADOS --
+        updatedAt $textType, -- Adicionado para LWW
+        isSynced $intType DEFAULT 0, -- 0 para false, 1 para true
         photoPath TEXT,
         completedAt TEXT,
         completedBy TEXT,
         latitude REAL,
         longitude REAL,
         locationName TEXT
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE sync_queue (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        taskId TEXT NOT NULL,
+        action TEXT NOT NULL, -- 'CREATE', 'UPDATE', 'DELETE'
+        payload TEXT, -- JSON string of the task data for CREATE/UPDATE
+        timestamp TEXT NOT NULL
       )
     ''');
   }
@@ -58,19 +67,32 @@ class DatabaseService {
     print('Atualizando banco da v$oldVersion para v$newVersion...');
     // Migração incremental para cada versão
     if (oldVersion < 2) {
-      // Adiciona o campo da câmera
       await db.execute('ALTER TABLE tasks ADD COLUMN photoPath TEXT');
     }
     if (oldVersion < 3) {
-      // Adiciona os campos de sensores
       await db.execute('ALTER TABLE tasks ADD COLUMN completedAt TEXT');
       await db.execute('ALTER TABLE tasks ADD COLUMN completedBy TEXT');
     }
     if (oldVersion < 4) {
-      // Adiciona os campos de GPS
       await db.execute('ALTER TABLE tasks ADD COLUMN latitude REAL');
       await db.execute('ALTER TABLE tasks ADD COLUMN longitude REAL');
       await db.execute('ALTER TABLE tasks ADD COLUMN locationName TEXT');
+    }
+    if (oldVersion < 5) {
+      // Adiciona updatedAt e isSynced à tabela tasks
+      await db.execute('ALTER TABLE tasks ADD COLUMN updatedAt TEXT');
+      await db.execute('ALTER TABLE tasks ADD COLUMN isSynced INTEGER DEFAULT 0');
+
+      // Cria a tabela sync_queue
+      await db.execute('''
+        CREATE TABLE sync_queue (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          taskId TEXT NOT NULL,
+          action TEXT NOT NULL, -- 'CREATE', 'UPDATE', 'DELETE'
+          payload TEXT, -- JSON string of the task data for CREATE/UPDATE
+          timestamp TEXT NOT NULL
+        )
+      ''');
     }
     print('✅ Banco migrado de v$oldVersion para v$newVersion');
   }

@@ -310,7 +310,6 @@ Future<void> _toggleComplete(Task task) async {
               if (value == 'nearby') {
                 _filterByNearby();
               } else {
-                // Se o filtro anterior era 'nearby', recarrega todas as tarefas
                 if (_filter == 'nearby') {
                   _loadTasks().then((_) {
                      setState(() => _filter = value);
@@ -397,6 +396,35 @@ Future<void> _toggleComplete(Task task) async {
             },
           ),
         ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(kToolbarHeight * 0.15), // Altura do banner
+          child: Consumer<ConnectivityService>(
+            builder: (context, connectivityService, child) {
+              final isOnline = connectivityService.isOnline;
+              final color = isOnline ? Colors.green : Colors.redAccent;
+              final text = isOnline ? 'Online' : 'Offline';
+              final icon = isOnline ? Icons.cloud_done : Icons.cloud_off;
+
+              return AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                color: color,
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(icon, color: Colors.white, size: 16),
+                    const SizedBox(width: 8),
+                    Text(
+                      text,
+                      style: const TextStyle(color: Colors.white, fontSize: 12),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
       ),
       body: RefreshIndicator(
         onRefresh: _loadTasks,

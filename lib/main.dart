@@ -1,7 +1,9 @@
 // lib/main.dart
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart'; // Importar provider
 import 'screens/task_list_screen.dart';
-import 'services/camera_service.dart'; // 1. Importar o CameraService
+import 'services/camera_service.dart';
+import 'services/connectivity_service.dart'; // Importar ConnectivityService
 import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -19,7 +21,12 @@ void main() async { // 2. Transformar main em async
   await CameraService.instance.initialize();
 
   // 6. Rodar o App
-  runApp(const MyApp());
+  runApp(
+    ChangeNotifierProvider( // Prover ConnectivityService
+      create: (context) => ConnectivityService(),
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
