@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/task.dart';
 import '../services/database_service.dart';
 import '../services/sensor_service.dart';
 import '../services/location_service.dart';
-import '../services/camera_service.dart'; // Importar o CameraService
+import '../services/camera_service.dart';
+import '../services/sync_service.dart'; // Importar o SyncService
 import '../screens/task_form_screen.dart';
 import '../widgets/task_card.dart';
+import '../services/connectivity_service.dart';
+
 
 class TaskListScreen extends StatefulWidget {
   const TaskListScreen({super.key});
@@ -18,18 +22,32 @@ class _TaskListScreenState extends State<TaskListScreen> {
   List<Task> _tasks = [];
   String _filter = 'all';
   bool _isLoading = true;
+  late final SyncService _syncService; // Instância do SyncService
 
   @override
   void initState() {
     super.initState();
+    // Obter o SyncService via Provider e adicionar o listener
+    _syncService = Provider.of<SyncService>(context, listen: false);
+    _syncService.addListener(_onSyncChanged);
+
     _loadTasks();
     _setupShakeDetection(); // INICIAR SHAKE
   }
 
   @override
   void dispose() {
+    _syncService.removeListener(_onSyncChanged); // Remover listener
     SensorService.instance.stop(); // PARAR SHAKE
     super.dispose();
+  }
+  
+  // Listener que recarrega as tarefas quando a sincronização termina
+  void _onSyncChanged() {
+    if (!_syncService.isSyncing) {
+      debugPrint('Sync finished, reloading tasks...');
+      _loadTasks();
+    }
   }
 
   // --- LÓGICA DO SHAKE DETECTION ---

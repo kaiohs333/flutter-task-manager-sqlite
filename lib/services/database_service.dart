@@ -97,16 +97,21 @@ class DatabaseService {
     print('✅ Banco migrado de v$oldVersion para v$newVersion');
   }
 
+import 'dart:convert'; // Importar para usar json.encode
+
+// ... (código existente omitido para brevidade)
+
   // --- MÉTODOS CRUD ATUALIZADOS ---
 
   Future<Task> create(Task task) async {
     final db = await instance.database;
-    // O 'id' agora é gerado pelo SQLite, então o 'create' retorna o novo id
-    final id = await db.insert('tasks', task.toMap());
-    return task.copyWith(id: id);
+    await db.insert('tasks', task.toMap());
+    // Adiciona à fila de sincronização
+    await addToSyncQueue(task.id!, 'CREATE', payload: json.encode(task.toMap()));
+    return task;
   }
 
-  Future<Task?> read(int id) async { // MUDANÇA: de String id para int id
+  Future<Task?> read(String id) async { // MUDANÇA: de int id para String id
     final db = await instance.database;
     final maps = await db.query(
       'tasks',
@@ -129,22 +134,30 @@ class DatabaseService {
 
   Future<int> update(Task task) async {
     final db = await instance.database;
-    return db.update(
+    final result = await db.update(
       'tasks',
       task.toMap(),
       where: 'id = ?',
       whereArgs: [task.id],
     );
+    // Adiciona à fila de sincronização
+    if (result > 0) {
+      await addToSyncQueue(task.id!, 'UPDATE', payload: json.encode(task.toMap()));
+    }
+    return result;
   }
 
   Future<int> delete(String id) async { // MUDANÇA: de int id para String id
     final db = await instance.database;
+    // Adiciona à fila de sincronização ANTES de deletar localmente
+    await addToSyncQueue(id, 'DELETE');
     return await db.delete(
       'tasks',
       where: 'id = ?',
       whereArgs: [id],
     );
   }
+// ... (código existente omitido para brevidade)
 
   // --- MÉTODOS DA FILA DE SINCRONIZAÇÃO ---
 
@@ -173,6 +186,27 @@ class DatabaseService {
       whereArgs: [id],
     );
     print('Removido da fila de sincronização: id $id');
+  }
+
+  // --- MÉTODOS DE APOIO À SINCRONIZAÇÃO ---
+
+  Future<void> setSynced(String taskId, bool isSynced) async {
+    final db = await instance.database;
+    await db.update(
+      'tasks',
+      {'isSynced': isSynced ? 1 : 0},
+      where: 'id = ?',
+      whereArgs: [taskId],
+    );
+  }
+
+  Future<Task?> getTaskById(String id) async {
+    final db = await instance.database;
+    final maps = await db.query('tasks', where: 'id = ?', whereArgs: [id]);
+    if (maps.isNotEmpty) {
+      return Task.fromMap(maps.first);
+    }
+    return null;
   }
 
   Future close() async {

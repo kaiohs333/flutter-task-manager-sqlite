@@ -17,15 +17,16 @@ void main() async {
   
   await CameraService.instance.initialize();
 
-  // Inicializar SyncService
-  final syncService = SyncService();
+  // Inicializar serviços com injeção de dependência
+  final connectivityService = ConnectivityService();
+  final syncService = SyncService(connectivityService);
   syncService.initialize();
 
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (context) => ConnectivityService()),
-        ChangeNotifierProvider(create: (context) => syncService), // Prover SyncService
+        ChangeNotifierProvider.value(value: connectivityService),
+        ChangeNotifierProvider.value(value: syncService),
       ],
       child: const MyApp(),
     ),
