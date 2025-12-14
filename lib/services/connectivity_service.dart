@@ -3,36 +3,30 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 
 class ConnectivityService extends ChangeNotifier {
-  bool _isOnline = false;
-  late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
+  ConnectivityResult _connectivityResult = ConnectivityResult.none;
+  late StreamSubscription<ConnectivityResult> _connectivitySubscription;
 
   ConnectivityService() {
     _initConnectivity();
-    _connectivitySubscription = Connectivity().onConnectivityChanged.listen(_updateConnectivityStatus);
+    _connectivitySubscription =
+        Connectivity().onConnectivityChanged.listen(_updateConnectivityStatus);
   }
 
-  bool get isOnline => _isOnline;
+  bool get isOnline =>
+      _connectivityResult != ConnectivityResult.none &&
+      _connectivityResult != ConnectivityResult.bluetooth;
 
   Future<void> _initConnectivity() async {
-    final results = await Connectivity().checkConnectivity();
-    _updateConnectivityStatus(results);
+    final result = await Connectivity().checkConnectivity();
+    _updateConnectivityStatus(result);
   }
 
-  void _updateConnectivityStatus(List<ConnectivityResult> results) {
-    // Definir o que consideramos uma conexão "online"
-    final hasConnection = results.any(
-      (result) =>
-          result == ConnectivityResult.wifi ||
-          result == ConnectivityResult.mobile ||
-          result == ConnectivityResult.ethernet ||
-          result == ConnectivityResult.vpn,
-    );
-
-    // Notificar os listeners apenas se o status de conexão mudar
-    if (hasConnection != _isOnline) {
-      _isOnline = hasConnection;
+  void _updateConnectivityStatus(ConnectivityResult result) {
+    if (_connectivityResult != result) {
+      _connectivityResult = result;
       notifyListeners();
-      debugPrint('Connectivity status changed: ${results.toString()}, isOnline: $_isOnline');
+      debugPrint(
+          'Connectivity status changed: $_connectivityResult, isOnline: $isOnline');
     }
   }
 
@@ -42,3 +36,4 @@ class ConnectivityService extends ChangeNotifier {
     super.dispose();
   }
 }
+

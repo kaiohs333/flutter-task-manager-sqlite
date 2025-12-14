@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 import '../models/task.dart';
@@ -21,7 +22,7 @@ class DatabaseService {
 
     return await openDatabase(
       path,
-      version: 5,  // AUMENTAMOS A VERSÃO PARA 5
+      version: 5, // AUMENTAMOS A VERSÃO PARA 5
       onCreate: _createDB,
       onUpgrade: _onUpgrade, // NOVO: Especifica a função de migração
     );
@@ -97,10 +98,6 @@ class DatabaseService {
     print('✅ Banco migrado de v$oldVersion para v$newVersion');
   }
 
-import 'dart:convert'; // Importar para usar json.encode
-
-// ... (código existente omitido para brevidade)
-
   // --- MÉTODOS CRUD ATUALIZADOS ---
 
   Future<Task> create(Task task) async {
@@ -157,11 +154,11 @@ import 'dart:convert'; // Importar para usar json.encode
       whereArgs: [id],
     );
   }
-// ... (código existente omitido para brevidade)
 
   // --- MÉTODOS DA FILA DE SINCRONIZAÇÃO ---
 
-  Future<void> addToSyncQueue(String taskId, String action, {String? payload}) async {
+  Future<void> addToSyncQueue(
+      String taskId, String action, {String? payload}) async {
     final db = await instance.database;
     await db.insert('sync_queue', {
       'taskId': taskId,
@@ -212,5 +209,17 @@ import 'dart:convert'; // Importar para usar json.encode
   Future close() async {
     final db = await instance.database;
     db.close();
+  }
+
+  // MÉTODO ADICIONADO PARA COMPATIBILIDADE
+  Future<List<Task>> getTasksNearLocation({
+    required double latitude,
+    required double longitude,
+    required int radiusInMeters,
+  }) async {
+    // Implementação de placeholder para evitar erros de compilação.
+    // Esta funcionalidade não faz parte dos requisitos principais.
+    print('Função "getTasksNearLocation" não implementada.');
+    return [];
   }
 }

@@ -40,7 +40,7 @@ dependencies:
   camera: ^0.10.5+9
   permission_handler: ^11.3.1
   sensors_plus: ^4.0.2
-  vibration: ^1.8.4
+  vibration: ^3.1.4
   geolocator: ^10.1.0
   geocoding: ^2.1.1
   http: ^1.2.1
