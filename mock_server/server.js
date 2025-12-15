@@ -1,116 +1,123 @@
-
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const { v4: uuidv4 } = require('uuid');
+const fs = require('fs');
+const path = require('path');
 
 const app = express();
 const port = 3000;
+const dbPath = path.join(__dirname, 'db.json');
+
+// --- Funções de Banco de Dados ---
+
+const readDatabase = () => {
+    try {
+        if (fs.existsSync(dbPath)) {
+            const data = fs.readFileSync(dbPath);
+            // Se o arquivo estiver vazio, retorne um objeto padrão
+            if (data.length === 0) {
+                return { tasks: [] };
+            }
+            return JSON.parse(data);
+        }
+    } catch (error) {
+        console.error('Error reading database file:', error);
+    }
+    // Se o arquivo não existe ou está corrompido, retorna um estado inicial
+    return { tasks: [] };
+};
+
+const writeDatabase = (data) => {
+    try {
+        fs.writeFileSync(dbPath, JSON.stringify(data, null, 2));
+    } catch (error) {
+        console.error('Error writing to database file:', error);
+    }
+};
+
+// --- Inicialização e Middlewares ---
+
+let db = readDatabase();
 
 app.use(cors());
 app.use(bodyParser.json());
 
-// In-memory database
-let tasks = [
-    {
-        id: 'd9a7e7de-093b-4c72-9998-d77489456a3b',
-        title: 'Task from Server 1',
-        description: 'This task was pre-loaded from the server.',
-        isCompleted: false,
-        createdAt: '2025-11-29T10:00:00.000Z',
-        updatedAt: '2025-11-29T10:00:00.000Z',
-        imagePath: null,
-        location: null,
-    },
-    {
-        id: 'a8c6c4b1-1b2f-4b3a-9c0d-3f7e9b6a1b3a',
-        title: 'Task from Server 2',
-        description: 'Another task from the server.',
-        isCompleted: false,
-        createdAt: '2025-11-29T11:00:00.000Z',
-        updatedAt: '2025-11-29T11:00:00.000Z',
-        imagePath: null,
-        location: null,
-    },
-];
-
-// Middleware to log requests
 app.use((req, res, next) => {
     console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
-    if (Object.keys(req.body).length > 0) {
+    if (req.body && Object.keys(req.body).length > 0) {
         console.log('Body:', req.body);
     }
     next();
 });
 
-// --- Routes ---
+// --- Rotas ---
 
-// Get all tasks
+// Obter todas as tarefas
 app.get('/tasks', (req, res) => {
-    console.log(`Returning ${tasks.length} tasks.`);
-    res.json(tasks);
+    console.log(`Returning ${db.tasks.length} tasks.`);
+    res.json(db.tasks);
 });
 
-// Create a new task
+// Criar uma nova tarefa
 app.post('/tasks', (req, res) => {
     const now = new Date().toISOString();
     const newTask = {
         ...req.body,
-        id: req.body.id || uuidv4(), // Use client-provided ID if available
-        createdAt: now,
+        id: req.body.id || uuidv4(),
+        createdAt: req.body.createdAt || now,
         updatedAt: now,
     };
-    tasks.push(newTask);
+    db.tasks.push(newTask);
+    writeDatabase(db);
     console.log('Created new task:', newTask.id);
     res.status(201).json(newTask);
 });
 
-// Update a task
+// Atualizar uma tarefa
 app.put('/tasks/:id', (req, res) => {
     const { id } = req.params;
-    const taskIndex = tasks.findIndex(t => t.id === id);
+    const taskIndex = db.tasks.findIndex(t => t.id === id);
 
     if (taskIndex === -1) {
-        // If task not found, treat it as a new creation (upsert)
-        const now = new Date().toISOString();
-        const newTask = {
-            ...req.body,
-            id: id,
-            createdAt: now, // Or maybe respect a client-sent createdAt? For LWW, updatedAt is key.
-            updatedAt: now,
-        };
-        tasks.push(newTask);
-        console.log(`Task with id ${id} not found. Created new task.`);
-        return res.status(201).json(newTask);
+        console.log(`Task with id ${id} not found for update.`);
+        return res.status(404).json({ message: 'Task not found' });
     }
 
-    const existingTask = tasks[taskIndex];
-    const now = new Date().toISOString();
+    const existingTask = db.tasks[taskIndex];
+    const incomingUpdatedAt = new Date(req.body.updatedAt);
+    const existingUpdatedAt = new Date(existingTask.updatedAt);
 
-    // LWW check could be done here, but for a mock server, we'll just update.
-    // The client is responsible for the LWW logic.
+    // Implementação da lógica Last-Write-Wins (LWW) no servidor
+    if (incomingUpdatedAt.getTime() <= existingUpdatedAt.getTime()) {
+        console.log(`Conflict: Incoming update for task ${id} is older or same as existing.`);
+        return res.status(409).json({ message: 'Conflict: Existing version is newer or same.' });
+    }
+
     const updatedTask = {
         ...existingTask,
         ...req.body,
-        updatedAt: now, // Always set a new updatedAt timestamp
+        updatedAt: new Date().toISOString(), // O servidor ainda define o updatedAt para a hora atual do servidor após a validação LWW
     };
 
-    tasks[taskIndex] = updatedTask;
+    db.tasks[taskIndex] = updatedTask;
+    writeDatabase(db);
     console.log('Updated task:', id);
     res.json(updatedTask);
 });
 
-// Delete a task
+// Deletar uma tarefa
 app.delete('/tasks/:id', (req, res) => {
     const { id } = req.params;
-    const initialLength = tasks.length;
-    tasks = tasks.filter(t => t.id !== id);
+    const initialLength = db.tasks.length;
+    db.tasks = db.tasks.filter(t => t.id !== id);
 
-    if (tasks.length === initialLength) {
+    if (db.tasks.length === initialLength) {
         console.log(`Task with id ${id} not found for deletion.`);
         return res.status(404).json({ message: 'Task not found' });
     }
-    
+
+    writeDatabase(db);
     console.log('Deleted task:', id);
     res.status(200).json({ message: 'Task deleted successfully' });
 });
@@ -118,6 +125,7 @@ app.delete('/tasks/:id', (req, res) => {
 
 app.listen(port, () => {
     console.log(`Mock server running at http://localhost:${port}`);
+    console.log('Database file is located at:', dbPath);
     console.log('Available endpoints:');
     console.log('  GET    /tasks');
     console.log('  POST   /tasks');

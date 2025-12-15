@@ -116,6 +116,21 @@ class TaskCard extends StatelessWidget {
                               : Colors.black87,
                           ),
                         ),
+                        Text(
+                          'Atualizado em: ${task.updatedAt.toLocal().toString()}',
+                          style: const TextStyle(fontSize: 10, color: Colors.blueGrey),
+                        ),
+                        Text(
+                          'Sincronizado: ${task.isSynced}',
+                          style: const TextStyle(fontSize: 10, color: Colors.blueGrey),
+                        ),
+                        Text(
+                            'ID: ${task.id ?? "N/A"}',
+                            style: TextStyle(
+                            fontSize: 10,
+                            color: Colors.grey[400],
+                            ),
+                          ),
 
                         if (task.description.isNotEmpty) ...[
                           const SizedBox(height: 4),

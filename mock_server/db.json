@@ -1,0 +1,36 @@
+{
+  "tasks": [
+    {
+      "id": "625cf775-2f53-41bc-a03e-ed64ced3e482",
+      "title": "TAREFA MODIFICADA PELO SERVIDOR",
+      "description": "A descrição foi alterada.",
+      "priority": "urgent",
+      "completed": 0,
+      "createdAt": "2025-12-14T20:42:19.952173",
+      "updatedAt": "2025-12-14T23:52:42.200Z",
+      "isSynced": 1,
+      "photoPath": null,
+      "completedAt": null,
+      "completedBy": null,
+      "latitude": null,
+      "longitude": null,
+      "locationName": null
+    },
+    {
+      "id": "51cab493-f840-48f4-9687-72edee72d53c",
+      "title": "REUNIAO SPRINT",
+      "description": "Organizar detalhes da sprint",
+      "priority": "medium",
+      "completed": 0,
+      "createdAt": "2025-12-14T20:50:49.721147",
+      "updatedAt": "2025-12-14T23:51:01.802Z",
+      "isSynced": 0,
+      "photoPath": null,
+      "completedAt": null,
+      "completedBy": null,
+      "latitude": null,
+      "longitude": null,
+      "locationName": null
+    }
+  ]
+}

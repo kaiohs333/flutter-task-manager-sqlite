@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io' show Platform; // Importar para checar a plataforma
 import 'package:http/http.dart' as http;
 import '../models/task.dart';
 
@@ -7,7 +8,8 @@ class ApiService {
   factory ApiService() => _instance;
   ApiService._internal();
 
-  final String _baseUrl = 'http://localhost:3000'; // URL do nosso servidor mock
+  // URL base que funciona tanto no emulador Android quanto no simulador iOS
+  final String _baseUrl = Platform.isAndroid ? 'http://10.0.2.2:3000' : 'http://localhost:3000';
 
   Future<List<Task>> getTasks() async {
     final response = await http.get(Uri.parse('$_baseUrl/tasks'));
